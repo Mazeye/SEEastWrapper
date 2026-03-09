@@ -1,0 +1,13 @@
+.build/
+.swiftpm/
+Package.resolved
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+.DS_Store
+
+# local research/temp docs
+*.csv
+TDD_WORKFLOW.md
+AR_INTERFACE.md
+AR_STARGAZING_README.md

@@ -1,5 +1,7 @@
 # SEEastWrapper
 
+[English](README_EN.md) | [日本語](README_JP.md)
+
 一个可通过 Swift Package Manager 引用的星体位置计算库，面向 AR 场景输出地平坐标（方位角/高度角）。
 
 ## 安装
@@ -21,7 +23,7 @@ dependencies: [
 )
 ```
 
-`SEEastWrapper` 内部依赖你维护的 SwissEphemeris fork（`main` 分支）：
+`SEEastWrapper` 内部依赖维护者的 SwissEphemeris fork（`main` 分支）：
 
 ```swift
 .package(url: "https://github.com/Mazeye/SwissEphemeris.git", branch: "main")
@@ -79,5 +81,5 @@ swift run SEEastWrapperDebugCLI --date 2026-03-09T20:00:00+08:00 --lat 39.9042 -
 ## 致谢与许可证
 
 - 本库基于 Swiss Ephemeris Swift wrapper 生态构建，感谢原作者 Vincent Smithers 及贡献者。原始项目地址：[`vsmithers1087/SwissEphemeris`](https://github.com/vsmithers1087/SwissEphemeris)（已归档）。
-- 当前项目依赖并引用了你的 fork：[`Mazeye/SwissEphemeris`](https://github.com/Mazeye/SwissEphemeris)。
+- 当前项目依赖并引用了维护者 fork：[`Mazeye/SwissEphemeris`](https://github.com/Mazeye/SwissEphemeris)。
 - 原项目采用 GNU General Public License（GPL-2.0 或更高）。本项目以 GPL 兼容方式发布，请在再分发时遵循对应条款（保留版权与许可证声明，并提供对应源码）。

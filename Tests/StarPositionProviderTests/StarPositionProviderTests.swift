@@ -3,23 +3,27 @@
 //  TDD：先写测试，计算侧实现 StarPositionProvider 直至全部通过，再接到 AR。
 //
 
-import XCTest
 import CoreLocation
+import XCTest
+
 @testable import SEEastWrapper
-import SwissEphemeris
 
 final class StarPositionProviderTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        JPLFileManager.setEphemerisPath()
+        SwissEphBridge.setEphemerisPath()
     }
 
     private let beijing = CLLocation(latitude: 39.9042, longitude: 116.4074)
     /// 北京 2024-06-15 22:00 北京时间 ≈ 14:00 UTC（夜间，可见北极星）
     private var nightInBeijing: Date {
         var c = DateComponents()
-        c.year = 2024; c.month = 6; c.day = 15; c.hour = 14; c.minute = 0
+        c.year = 2024
+        c.month = 6
+        c.day = 15
+        c.hour = 14
+        c.minute = 0
         return Calendar(identifier: .gregorian).date(from: c) ?? Date()
     }
 
@@ -32,10 +36,12 @@ final class StarPositionProviderTests: XCTestCase {
         for item in list {
             XCTAssertFalse(item.id.isEmpty, "id 不应为空: \(item.id)")
             XCTAssertFalse(item.displayName.isEmpty, "displayName 不应为空: \(item.id)")
-            XCTAssert(item.azimuthDegrees >= 0 && item.azimuthDegrees < 360,
-                      "方位角应在 [0, 360): \(item.id) = \(item.azimuthDegrees)")
-            XCTAssert(item.altitudeDegrees >= -90 && item.altitudeDegrees <= 90,
-                      "高度角应在 [-90, 90]: \(item.id) = \(item.altitudeDegrees)")
+            XCTAssert(
+                item.azimuthDegrees >= 0 && item.azimuthDegrees < 360,
+                "方位角应在 [0, 360): \(item.id) = \(item.azimuthDegrees)")
+            XCTAssert(
+                item.altitudeDegrees >= -90 && item.altitudeDegrees <= 90,
+                "高度角应在 [-90, 90]: \(item.id) = \(item.altitudeDegrees)")
         }
     }
 
@@ -43,14 +49,16 @@ final class StarPositionProviderTests: XCTestCase {
     func testRealProviderReturnsValidListStructure() {
         let provider: StarPositionProvider = RealStarPositionProvider()
         let list = provider.starPositions(date: nightInBeijing, location: beijing)
-        if list.isEmpty { return } // 尚未实现时跳过结构检查
+        if list.isEmpty { return }  // 尚未实现时跳过结构检查
         for item in list {
             XCTAssertFalse(item.id.isEmpty, "id 不应为空: \(item.id)")
             XCTAssertFalse(item.displayName.isEmpty, "displayName 不应为空: \(item.id)")
-            XCTAssert(item.azimuthDegrees >= 0 && item.azimuthDegrees < 360,
-                      "方位角应在 [0, 360): \(item.id) = \(item.azimuthDegrees)")
-            XCTAssert(item.altitudeDegrees >= -90 && item.altitudeDegrees <= 90,
-                      "高度角应在 [-90, 90]: \(item.id) = \(item.altitudeDegrees)")
+            XCTAssert(
+                item.azimuthDegrees >= 0 && item.azimuthDegrees < 360,
+                "方位角应在 [0, 360): \(item.id) = \(item.azimuthDegrees)")
+            XCTAssert(
+                item.altitudeDegrees >= -90 && item.altitudeDegrees <= 90,
+                "高度角应在 [-90, 90]: \(item.id) = \(item.altitudeDegrees)")
         }
     }
 

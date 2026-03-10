@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SEEastWrapper}",
+            "name": "Debug SEEastWrapperDebugCLI",
+            "program": "${workspaceFolder:SEEastWrapper}/.build/debug/SEEastWrapperDebugCLI",
+            "preLaunchTask": "swift: Build Debug SEEastWrapperDebugCLI"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SEEastWrapper}",
+            "name": "Release SEEastWrapperDebugCLI",
+            "program": "${workspaceFolder:SEEastWrapper}/.build/release/SEEastWrapperDebugCLI",
+            "preLaunchTask": "swift: Build Release SEEastWrapperDebugCLI"
+        }
+    ]
+}

@@ -1,23 +1,17 @@
 //
 //  RealStarPositionProvider.swift
 //  计算侧实现：根据 date + location 用星历算出地平坐标，返回 StarPositionList。
-//  TDD：先写测试，本实现从“返回空列表”开始，直至通过全部测试再接到 AR。
+//  TDD：先写测试，本实现从"返回空列表"开始，直至通过全部测试再接到 AR。
 //
 
-import Foundation
 import CoreLocation
-
-#if canImport(SwissEphemeris)
-import SwissEphemeris
-#endif
+import Foundation
 
 /// 天体坐标输入源：可用标准名（星表名）或直接给 J2000 赤道坐标。
 public enum CelestialCoordinateSource {
     case standardName(String)
     case j2000(EquatorialJ2000)
-#if canImport(SwissEphemeris)
-    case swissPlanet(Planet)
-#endif
+    case swissPlanet(SwissEphPlanet)
 }
 
 /// 可扩展天体配置：后续新增天体时只需追加配置。
@@ -117,39 +111,51 @@ public final class RealStarPositionProvider: StarPositionProvider {
             )
         ]
 
-#if canImport(SwissEphemeris)
         objects.append(
             contentsOf: [
-                CelestialObjectConfig(id: "sun", displayName: "日", category: .sun, source: .swissPlanet(.sun)),
-                CelestialObjectConfig(id: "moon", displayName: "月", category: .moon, source: .swissPlanet(.moon)),
-                CelestialObjectConfig(id: "mercury", displayName: "水星", category: .planet, source: .swissPlanet(.mercury)),
-                CelestialObjectConfig(id: "venus", displayName: "金星", category: .planet, source: .swissPlanet(.venus)),
-                CelestialObjectConfig(id: "mars", displayName: "火星", category: .planet, source: .swissPlanet(.mars)),
-                CelestialObjectConfig(id: "jupiter", displayName: "木星", category: .planet, source: .swissPlanet(.jupiter)),
-                CelestialObjectConfig(id: "saturn", displayName: "土星", category: .planet, source: .swissPlanet(.saturn))
+                CelestialObjectConfig(
+                    id: "sun", displayName: "日", category: .sun, source: .swissPlanet(.sun)),
+                CelestialObjectConfig(
+                    id: "moon", displayName: "月", category: .moon, source: .swissPlanet(.moon)),
+                CelestialObjectConfig(
+                    id: "mercury", displayName: "水星", category: .planet,
+                    source: .swissPlanet(.mercury)),
+                CelestialObjectConfig(
+                    id: "venus", displayName: "金星", category: .planet, source: .swissPlanet(.venus)),
+                CelestialObjectConfig(
+                    id: "mars", displayName: "火星", category: .planet, source: .swissPlanet(.mars)),
+                CelestialObjectConfig(
+                    id: "jupiter", displayName: "木星", category: .planet,
+                    source: .swissPlanet(.jupiter)),
+                CelestialObjectConfig(
+                    id: "saturn", displayName: "土星", category: .planet,
+                    source: .swissPlanet(.saturn)),
             ]
         )
-#endif
         return objects
     }
 
     // MARK: - 内部工具
 
-    private func resolveEquatorialCoordinate(for object: CelestialObjectConfig, date: Date) -> EquatorialJ2000? {
+    private func resolveEquatorialCoordinate(for object: CelestialObjectConfig, date: Date)
+        -> EquatorialJ2000?
+    {
         switch object.source {
         case .j2000(let eq):
             return eq
         case .standardName(let name):
             return standardNameLookup[name.lowercased()]
-#if canImport(SwissEphemeris)
         case .swissPlanet(let planet):
-            let coord = Coordinate<Planet>(body: planet, date: date)
+            let jd = SwissEphBridge.julianDay(from: date)
+            guard let coord = SwissEphBridge.calculateCoordinates(planet: planet, julianDay: jd)
+            else {
+                return nil
+            }
             return Self.eclipticToEquatorial(
                 longitudeDeg: coord.longitude,
                 latitudeDeg: coord.latitude,
                 date: date
             )
-#endif
         }
     }
 
@@ -161,7 +167,8 @@ public final class RealStarPositionProvider: StarPositionProvider {
             }
         }
         for entry in bigDipperAndPolarisJ2000 {
-            lookup[entry.name.lowercased()] = EquatorialJ2000(raDeg: entry.raDeg, decDeg: entry.decDeg)
+            lookup[entry.name.lowercased()] = EquatorialJ2000(
+                raDeg: entry.raDeg, decDeg: entry.decDeg)
         }
         return lookup
     }
@@ -223,10 +230,12 @@ public final class RealStarPositionProvider: StarPositionProvider {
     }
 
     /// 地方恒星时（度，0-360）。
-    private static func localSiderealTimeDegrees(date: Date, observerLongitudeDeg: Double) -> Double {
+    private static func localSiderealTimeDegrees(date: Date, observerLongitudeDeg: Double) -> Double
+    {
         let jd = julianDay(date: date)
         let t = (jd - 2451545.0) / 36525.0
-        let gmst = 280.46061837
+        let gmst =
+            280.46061837
             + 360.98564736629 * (jd - 2451545.0)
             + 0.000387933 * t * t
             - (t * t * t) / 38710000.0

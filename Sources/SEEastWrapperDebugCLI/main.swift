@@ -1,7 +1,6 @@
-import Foundation
 import CoreLocation
+import Foundation
 import SEEastWrapper
-import SwissEphemeris
 
 struct CLIOptions {
     var date: Date = Date()
@@ -15,24 +14,24 @@ struct CLIOptions {
 
 func printUsage() {
     let text = """
-    SEEastWrapperDebugCLI
+        SEEastWrapperDebugCLI
 
-    用法:
-      swift run SEEastWrapperDebugCLI [options]
+        用法:
+          swift run SEEastWrapperDebugCLI [options]
 
-    选项:
-      --date <ISO8601>       查询时间，例如 2026-03-09T20:00:00+08:00
-      --lat <Double>         纬度（默认 39.9042）
-      --lon <Double>         经度（默认 116.4074）
-      --alt <Double>         海拔米（默认 0）
-      --visible-only         只显示地平线上方（alt > 0）的目标
-      --category <name>      过滤类别: sun|moon|planet|star|lunarMansion
-      --limit <Int>          仅显示前 N 个（按高度角降序）
-      --help                 显示帮助
+        选项:
+          --date <ISO8601>       查询时间，例如 2026-03-09T20:00:00+08:00
+          --lat <Double>         纬度（默认 39.9042）
+          --lon <Double>         经度（默认 116.4074）
+          --alt <Double>         海拔米（默认 0）
+          --visible-only         只显示地平线上方（alt > 0）的目标
+          --category <name>      过滤类别: sun|moon|planet|star|lunarMansion
+          --limit <Int>          仅显示前 N 个（按高度角降序）
+          --help                 显示帮助
 
-    示例:
-      swift run SEEastWrapperDebugCLI --date 2026-03-09T20:00:00+08:00 --lat 31.2304 --lon 121.4737 --visible-only
-    """
+        示例:
+          swift run SEEastWrapperDebugCLI --date 2026-03-09T20:00:00+08:00 --lat 31.2304 --lon 121.4737 --visible-only
+        """
     print(text)
 }
 
@@ -117,7 +116,7 @@ guard let options = parseArgs() else {
     exit(0)
 }
 
-JPLFileManager.setEphemerisPath()
+SwissEphBridge.setEphemerisPath()
 
 let provider = RealStarPositionProvider()
 let input = StarObservationInput(

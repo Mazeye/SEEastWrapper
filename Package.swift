@@ -12,10 +12,10 @@ let package = Package(
         .executable(
             name: "SEEastWrapperDebugCLI",
             targets: ["SEEastWrapperDebugCLI"]
-        )
+        ),
     ],
     dependencies: [
-        .package(url: "https://github.com/Mazeye/SwissEphemeris.git", branch: "main"),
+        .package(url: "https://github.com/Mazeye/SwissEphemeris.git", branch: "main")
     ],
     targets: [
         .target(
@@ -26,12 +26,12 @@ let package = Package(
         ),
         .executableTarget(
             name: "SEEastWrapperDebugCLI",
-            dependencies: ["SEEastWrapper", "SwissEphemeris"],
+            dependencies: ["SEEastWrapper"],
             path: "Sources/SEEastWrapperDebugCLI"
         ),
         .testTarget(
             name: "StarPositionProviderTests",
-            dependencies: ["SEEastWrapper", "SwissEphemeris"],
+            dependencies: ["SEEastWrapper"],
             path: "Tests/StarPositionProviderTests"
         ),
     ]

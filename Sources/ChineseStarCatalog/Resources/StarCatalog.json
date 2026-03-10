@@ -1,0 +1,461 @@
+[
+    {
+        "id": "sun",
+        "displayName": "太阳",
+        "category": "sun",
+        "source": {
+            "type": "swissPlanet",
+            "value": "sun"
+        }
+    },
+    {
+        "id": "moon",
+        "displayName": "月亮",
+        "category": "moon",
+        "source": {
+            "type": "swissPlanet",
+            "value": "moon"
+        }
+    },
+    {
+        "id": "mercury",
+        "displayName": "水星",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "mercury"
+        }
+    },
+    {
+        "id": "venus",
+        "displayName": "金星",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "venus"
+        }
+    },
+    {
+        "id": "mars",
+        "displayName": "火星",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "mars"
+        }
+    },
+    {
+        "id": "jupiter",
+        "displayName": "木星",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "jupiter"
+        }
+    },
+    {
+        "id": "saturn",
+        "displayName": "土星",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "saturn"
+        }
+    },
+    {
+        "id": "luo_hou",
+        "displayName": "罗睺",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "trueNode"
+        }
+    },
+    {
+        "id": "ji_du",
+        "displayName": "计都",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "southNode"
+        }
+    },
+    {
+        "id": "zi_qi",
+        "displayName": "紫炁",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "ziqi"
+        }
+    },
+    {
+        "id": "yue_bei",
+        "displayName": "月孛",
+        "category": "planet",
+        "source": {
+            "type": "swissPlanet",
+            "value": "meanApog"
+        }
+    },
+    {
+        "id": "bd_tian_shu",
+        "displayName": "天枢",
+        "category": "star",
+        "source": {
+            "type": "j2000",
+            "ra": 165.93,
+            "dec": 61.75
+        }
+    },
+    {
+        "id": "bd_tian_xuan",
+        "displayName": "天璇",
+        "category": "star",
+        "source": {
+            "type": "j2000",
+            "ra": 165.46,
+            "dec": 56.38
+        }
+    },
+    {
+        "id": "bd_tian_ji",
+        "displayName": "天玑",
+        "category": "star",
+        "source": {
+            "type": "j2000",
+            "ra": 178.46,
+            "dec": 53.70
+        }
+    },
+    {
+        "id": "bd_tian_quan",
+        "displayName": "天权",
+        "category": "star",
+        "source": {
+            "type": "j2000",
+            "ra": 183.86,
+            "dec": 57.03
+        }
+    },
+    {
+        "id": "bd_yu_heng",
+        "displayName": "玉衡",
+        "category": "star",
+        "source": {
+            "type": "j2000",
+            "ra": 193.51,
+            "dec": 55.96
+        }
+    },
+    {
+        "id": "bd_kai_yang",
+        "displayName": "开阳",
+        "category": "star",
+        "source": {
+            "type": "j2000",
+            "ra": 200.98,
+            "dec": 54.93
+        }
+    },
+    {
+        "id": "bd_yao_guang",
+        "displayName": "瑶光",
+        "category": "star",
+        "source": {
+            "type": "j2000",
+            "ra": 206.89,
+            "dec": 49.31
+        }
+    },
+    {
+        "id": "polaris",
+        "displayName": "北极星",
+        "category": "star",
+        "source": {
+            "type": "j2000",
+            "ra": 37.96,
+            "dec": 89.26
+        }
+    },
+    {
+        "id": "lm_角",
+        "displayName": "角宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 201.298333,
+            "dec": -11.161389
+        }
+    },
+    {
+        "id": "lm_亢",
+        "displayName": "亢宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 213.22375,
+            "dec": -10.274167
+        }
+    },
+    {
+        "id": "lm_氐",
+        "displayName": "氐宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 222.719583,
+            "dec": -16.041667
+        }
+    },
+    {
+        "id": "lm_房",
+        "displayName": "房宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 239.712917,
+            "dec": -26.114167
+        }
+    },
+    {
+        "id": "lm_心",
+        "displayName": "心宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 245.297083,
+            "dec": -25.592778
+        }
+    },
+    {
+        "id": "lm_尾",
+        "displayName": "尾宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 252.9675,
+            "dec": -38.0475
+        }
+    },
+    {
+        "id": "lm_箕",
+        "displayName": "箕宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 271.452083,
+            "dec": -30.423611
+        }
+    },
+    {
+        "id": "lm_斗",
+        "displayName": "斗宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 281.414167,
+            "dec": -26.990833
+        }
+    },
+    {
+        "id": "lm_牛",
+        "displayName": "牛宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 305.252917,
+            "dec": -14.781389
+        }
+    },
+    {
+        "id": "lm_女",
+        "displayName": "女宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 311.91875,
+            "dec": -9.495833
+        }
+    },
+    {
+        "id": "lm_虚",
+        "displayName": "虚宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 322.889583,
+            "dec": -5.571111
+        }
+    },
+    {
+        "id": "lm_危",
+        "displayName": "危宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 331.445833,
+            "dec": -0.319722
+        }
+    },
+    {
+        "id": "lm_室",
+        "displayName": "室宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 346.19,
+            "dec": 15.205278
+        }
+    },
+    {
+        "id": "lm_壁",
+        "displayName": "壁宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 3.309167,
+            "dec": 15.183611
+        }
+    },
+    {
+        "id": "lm_奎",
+        "displayName": "奎宿二",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 11.835,
+            "dec": 24.267222
+        }
+    },
+    {
+        "id": "lm_娄",
+        "displayName": "娄宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 28.66,
+            "dec": 20.808056
+        }
+    },
+    {
+        "id": "lm_胃",
+        "displayName": "胃宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 40.862917,
+            "dec": 21.173611
+        }
+    },
+    {
+        "id": "lm_昴",
+        "displayName": "昴宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 56.21875,
+            "dec": 24.113333
+        }
+    },
+    {
+        "id": "lm_毕",
+        "displayName": "毕宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 67.154167,
+            "dec": 19.180556
+        }
+    },
+    {
+        "id": "lm_觜",
+        "displayName": "觜宿二",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 83.785,
+            "dec": 9.415
+        }
+    },
+    {
+        "id": "lm_参",
+        "displayName": "参宿三",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 83.001667,
+            "dec": -0.299167
+        }
+    },
+    {
+        "id": "lm_井",
+        "displayName": "井宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 95.74,
+            "dec": 22.513611
+        }
+    },
+    {
+        "id": "lm_鬼",
+        "displayName": "鬼宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 127.89875,
+            "dec": 18.094444
+        }
+    },
+    {
+        "id": "lm_柳",
+        "displayName": "柳宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 129.414167,
+            "dec": 5.703611
+        }
+    },
+    {
+        "id": "lm_星",
+        "displayName": "星宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 141.896667,
+            "dec": -8.658611
+        }
+    },
+    {
+        "id": "lm_张",
+        "displayName": "张宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 147.869583,
+            "dec": -14.846667
+        }
+    },
+    {
+        "id": "lm_翼",
+        "displayName": "翼宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 164.94375,
+            "dec": -18.298889
+        }
+    },
+    {
+        "id": "lm_轸",
+        "displayName": "轸宿一",
+        "category": "lunarMansion",
+        "source": {
+            "type": "j2000",
+            "ra": 183.951667,
+            "dec": -17.541944
+        }
+    }
+]

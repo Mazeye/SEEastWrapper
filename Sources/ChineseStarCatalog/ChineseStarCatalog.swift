@@ -41,7 +41,7 @@ public enum BeiDouStar: String, CaseIterable {
 
 // MARK: - 赤道坐标（J2000，度）
 
-public struct EquatorialJ2000 {
+public struct EquatorialJ2000: Decodable {
     public let raDeg: Double  // 赤经（度，0–360）
     public let decDeg: Double  // 赤纬（度，-90–90）
     public init(raDeg: Double, decDeg: Double) {

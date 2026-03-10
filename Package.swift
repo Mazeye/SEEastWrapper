@@ -22,7 +22,8 @@ let package = Package(
             name: "SEEastWrapper",
             dependencies: ["SwissEphemeris"],
             path: "Sources/ChineseStarCatalog",
-            exclude: []
+            exclude: [],
+            resources: [.process("Resources")]
         ),
         .executableTarget(
             name: "SEEastWrapperDebugCLI",

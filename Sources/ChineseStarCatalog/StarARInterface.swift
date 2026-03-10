@@ -3,8 +3,8 @@
 //  AR 观星 — 星位置列表接口（AR 侧只依赖此协议，先用固定数据搭 AR，计算侧完成后注入真实数据）
 //
 
-import Foundation
 import CoreLocation
+import Foundation
 
 /// 观测输入（符合 SwiftUI / CoreLocation 常用模型）
 public struct StarObservationInput {
@@ -54,7 +54,7 @@ public struct StarARItem: Sendable {
 }
 
 /// 星体分类（AR 可按此做不同图标/颜色）
-public enum StarARCategory: String, Sendable {
+public enum StarARCategory: String, Sendable, Codable {
     case sun
     case moon
     case planet
@@ -77,9 +77,9 @@ public protocol StarPositionProvider: AnyObject {
     func starPositions(date: Date, location: CLLocation?) -> StarPositionList
 }
 
-public extension StarPositionProvider {
+extension StarPositionProvider {
     /// SwiftUI / CoreLocation 风格便捷接口：输入 Date + CLLocationCoordinate2D。
-    func starPositions(input: StarObservationInput) -> StarPositionList {
+    public func starPositions(input: StarObservationInput) -> StarPositionList {
         let location = CLLocation(
             coordinate: input.coordinate,
             altitude: input.altitudeMeters,
@@ -100,20 +100,48 @@ public struct MockStarData: @unchecked Sendable {
     /// 示例：约 10 颗星的固定位置（方位 0–360°，高度 10–70°）
     public static func fixedStarPositionList() -> StarPositionList {
         [
-            StarARItem(id: "sun", displayName: "太阳", azimuthDegrees: 120, altitudeDegrees: 45, magnitude: -26.7, category: .sun),
-            StarARItem(id: "moon", displayName: "月", azimuthDegrees: 200, altitudeDegrees: 35, magnitude: -12, category: .moon),
-            StarARItem(id: "mars", displayName: "火星", azimuthDegrees: 180, altitudeDegrees: 50, magnitude: 0.5, category: .planet),
-            StarARItem(id: "jupiter", displayName: "木星", azimuthDegrees: 250, altitudeDegrees: 25, magnitude: -2, category: .planet),
-            StarARItem(id: "tian_shu", displayName: "天枢", azimuthDegrees: 15, altitudeDegrees: 55, magnitude: 1.8, category: .star),
-            StarARItem(id: "tian_xuan", displayName: "天璇", azimuthDegrees: 18, altitudeDegrees: 52, magnitude: 2.3, category: .star),
-            StarARItem(id: "tian_ji", displayName: "天玑", azimuthDegrees: 22, altitudeDegrees: 48, magnitude: 2.4, category: .star),
-            StarARItem(id: "tian_quan", displayName: "天权", azimuthDegrees: 25, altitudeDegrees: 46, magnitude: 3.3, category: .star),
-            StarARItem(id: "yu_heng", displayName: "玉衡", azimuthDegrees: 28, altitudeDegrees: 42, magnitude: 1.8, category: .star),
-            StarARItem(id: "kai_yang", displayName: "开阳", azimuthDegrees: 32, altitudeDegrees: 38, magnitude: 2.2, category: .star),
-            StarARItem(id: "yao_guang", displayName: "瑶光", azimuthDegrees: 38, altitudeDegrees: 32, magnitude: 1.9, category: .star),
-            StarARItem(id: "polaris", displayName: "北极星", azimuthDegrees: 0, altitudeDegrees: 38, magnitude: 2.0, category: .star),
-            StarARItem(id: "spica", displayName: "角宿一", azimuthDegrees: 220, altitudeDegrees: 20, magnitude: 1.0, category: .lunarMansion),
-            StarARItem(id: "antares", displayName: "心宿二", azimuthDegrees: 190, altitudeDegrees: 15, magnitude: 1.0, category: .lunarMansion),
+            StarARItem(
+                id: "sun", displayName: "太阳", azimuthDegrees: 120, altitudeDegrees: 45,
+                magnitude: -26.7, category: .sun),
+            StarARItem(
+                id: "moon", displayName: "月", azimuthDegrees: 200, altitudeDegrees: 35,
+                magnitude: -12, category: .moon),
+            StarARItem(
+                id: "mars", displayName: "火星", azimuthDegrees: 180, altitudeDegrees: 50,
+                magnitude: 0.5, category: .planet),
+            StarARItem(
+                id: "jupiter", displayName: "木星", azimuthDegrees: 250, altitudeDegrees: 25,
+                magnitude: -2, category: .planet),
+            StarARItem(
+                id: "tian_shu", displayName: "天枢", azimuthDegrees: 15, altitudeDegrees: 55,
+                magnitude: 1.8, category: .star),
+            StarARItem(
+                id: "tian_xuan", displayName: "天璇", azimuthDegrees: 18, altitudeDegrees: 52,
+                magnitude: 2.3, category: .star),
+            StarARItem(
+                id: "tian_ji", displayName: "天玑", azimuthDegrees: 22, altitudeDegrees: 48,
+                magnitude: 2.4, category: .star),
+            StarARItem(
+                id: "tian_quan", displayName: "天权", azimuthDegrees: 25, altitudeDegrees: 46,
+                magnitude: 3.3, category: .star),
+            StarARItem(
+                id: "yu_heng", displayName: "玉衡", azimuthDegrees: 28, altitudeDegrees: 42,
+                magnitude: 1.8, category: .star),
+            StarARItem(
+                id: "kai_yang", displayName: "开阳", azimuthDegrees: 32, altitudeDegrees: 38,
+                magnitude: 2.2, category: .star),
+            StarARItem(
+                id: "yao_guang", displayName: "瑶光", azimuthDegrees: 38, altitudeDegrees: 32,
+                magnitude: 1.9, category: .star),
+            StarARItem(
+                id: "polaris", displayName: "北极星", azimuthDegrees: 0, altitudeDegrees: 38,
+                magnitude: 2.0, category: .star),
+            StarARItem(
+                id: "spica", displayName: "角宿一", azimuthDegrees: 220, altitudeDegrees: 20,
+                magnitude: 1.0, category: .lunarMansion),
+            StarARItem(
+                id: "antares", displayName: "心宿二", azimuthDegrees: 190, altitudeDegrees: 15,
+                magnitude: 1.0, category: .lunarMansion),
         ]
     }
 

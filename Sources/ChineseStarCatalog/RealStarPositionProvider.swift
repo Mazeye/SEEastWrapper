@@ -8,14 +8,38 @@ import CoreLocation
 import Foundation
 
 /// 天体坐标输入源：可用标准名（星表名）或直接给 J2000 赤道坐标。
-public enum CelestialCoordinateSource {
+public enum CelestialCoordinateSource: Decodable {
     case standardName(String)
     case j2000(EquatorialJ2000)
     case swissPlanet(SwissEphPlanet)
+
+    private enum CodingKeys: String, CodingKey {
+        case type, value, ra, dec
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+        switch type {
+        case "standardName":
+            let value = try container.decode(String.self, forKey: .value)
+            self = .standardName(value)
+        case "j2000":
+            let ra = try container.decode(Double.self, forKey: .ra)
+            let dec = try container.decode(Double.self, forKey: .dec)
+            self = .j2000(EquatorialJ2000(raDeg: ra, decDeg: dec))
+        case "swissPlanet":
+            let value = try container.decode(SwissEphPlanet.self, forKey: .value)
+            self = .swissPlanet(value)
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .type, in: container, debugDescription: "Unknown source type")
+        }
+    }
 }
 
 /// 可扩展天体配置：后续新增天体时只需追加配置。
-public struct CelestialObjectConfig {
+public struct CelestialObjectConfig: Decodable {
     public let id: String
     public let displayName: String
     public let category: StarARCategory
@@ -35,6 +59,19 @@ public struct CelestialObjectConfig {
         self.magnitude = magnitude
         self.source = source
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, displayName, category, magnitude, source
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        try id = container.decode(String.self, forKey: .id)
+        try displayName = container.decode(String.self, forKey: .displayName)
+        try category = container.decode(StarARCategory.self, forKey: .category)
+        try magnitude = container.decodeIfPresent(Double.self, forKey: .magnitude)
+        try source = container.decode(CelestialCoordinateSource.self, forKey: .source)
+    }
 }
 
 /// 真实星位置提供者：
@@ -44,9 +81,9 @@ public final class RealStarPositionProvider: StarPositionProvider {
     private let objects: [CelestialObjectConfig]
     private let standardNameLookup: [String: EquatorialJ2000]
 
-    /// 默认初始化：返回二十八宿 + 日/月 + 天极 + 五大行星。
+    /// 默认初始化：从 JSON 配置文件加载。
     public convenience init() {
-        self.init(objects: Self.defaultObjects())
+        self.init(objects: Self.loadFromJSON())
     }
 
     /// 自定义初始化：可传入任意天体配置数组，支持按标准名或 J2000 扩展。
@@ -81,58 +118,23 @@ public final class RealStarPositionProvider: StarPositionProvider {
         }
     }
 
-    // MARK: - 默认配置（基础观星目标）
+    // MARK: - 从 JSON 加载配置
 
-    public static func defaultObjects() -> [CelestialObjectConfig] {
-        var objects = defaultLunarMansionObjects()
-        objects.append(contentsOf: defaultCoreSkyObjects())
-        return objects
-    }
-
-    public static func defaultLunarMansionObjects() -> [CelestialObjectConfig] {
-        lunarMansionAnchorsJ2000.map { anchor in
-            CelestialObjectConfig(
-                id: "lm_\(anchor.mansion)",
-                displayName: "\(anchor.mansion)宿",
-                category: .lunarMansion,
-                source: .j2000(anchor.eq)
+    public static func loadFromJSON() -> [CelestialObjectConfig] {
+        guard let url = Bundle.module.url(forResource: "StarCatalog", withExtension: "json") else {
+            print(
+                "Warning: Could not find StarCatalog.json in module bundle. Falling back to empty catalog."
             )
+            return []
         }
-    }
-
-    /// 日/月/天极/五大行星
-    public static func defaultCoreSkyObjects() -> [CelestialObjectConfig] {
-        var objects: [CelestialObjectConfig] = [
-            CelestialObjectConfig(
-                id: "tianji",
-                displayName: "天极",
-                category: .star,
-                source: .j2000(EquatorialJ2000(raDeg: 37.96, decDeg: 89.26))
-            )
-        ]
-
-        objects.append(
-            contentsOf: [
-                CelestialObjectConfig(
-                    id: "sun", displayName: "日", category: .sun, source: .swissPlanet(.sun)),
-                CelestialObjectConfig(
-                    id: "moon", displayName: "月", category: .moon, source: .swissPlanet(.moon)),
-                CelestialObjectConfig(
-                    id: "mercury", displayName: "水星", category: .planet,
-                    source: .swissPlanet(.mercury)),
-                CelestialObjectConfig(
-                    id: "venus", displayName: "金星", category: .planet, source: .swissPlanet(.venus)),
-                CelestialObjectConfig(
-                    id: "mars", displayName: "火星", category: .planet, source: .swissPlanet(.mars)),
-                CelestialObjectConfig(
-                    id: "jupiter", displayName: "木星", category: .planet,
-                    source: .swissPlanet(.jupiter)),
-                CelestialObjectConfig(
-                    id: "saturn", displayName: "土星", category: .planet,
-                    source: .swissPlanet(.saturn)),
-            ]
-        )
-        return objects
+        do {
+            let data = try Data(contentsOf: url)
+            let decoder = JSONDecoder()
+            return try decoder.decode([CelestialObjectConfig].self, from: data)
+        } catch {
+            print("Error parsing StarCatalog.json: \(error)")
+            return []
+        }
     }
 
     // MARK: - 内部工具

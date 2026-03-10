@@ -11,14 +11,35 @@ import Foundation
 
 /// 对应 Swiss Ephemeris C API 的行星 ID。
 /// 仅包含日月与五大行星（中国古代天文所需）。
-public enum SwissEphPlanet: Int32, CaseIterable {
-    case sun = 0  // SE_SUN
-    case moon = 1  // SE_MOON
-    case mercury = 2  // SE_MERCURY
-    case venus = 3  // SE_VENUS
-    case mars = 4  // SE_MARS
-    case jupiter = 5  // SE_JUPITER
-    case saturn = 6  // SE_SATURN
+public enum SwissEphPlanet: String, CaseIterable, Codable {
+    case sun  // SE_SUN
+    case moon  // SE_MOON
+    case mercury  // SE_MERCURY
+    case venus  // SE_VENUS
+    case mars  // SE_MARS
+    case jupiter  // SE_JUPITER
+    case saturn  // SE_SATURN
+
+    // 四余
+    case trueNode  // 罗睺 (SE_TRUE_NODE)
+    case southNode  // 计都 (计算获得: trueNode + 180°)
+    case ziqi  // 紫炁 (计算获得: 占位算法，约28年一周天)
+    case meanApog  // 月孛 (SE_MEAN_APOG)
+
+    var sePlanetID: Int32? {
+        switch self {
+        case .sun: return SE_SUN
+        case .moon: return SE_MOON
+        case .mercury: return SE_MERCURY
+        case .venus: return SE_VENUS
+        case .mars: return SE_MARS
+        case .jupiter: return SE_JUPITER
+        case .saturn: return SE_SATURN
+        case .trueNode: return SE_TRUE_NODE
+        case .meanApog: return SE_MEAN_APOG
+        case .southNode, .ziqi: return nil  // 使用特殊计算
+        }
+    }
 }
 
 // MARK: - 安全桥接
@@ -50,13 +71,37 @@ public enum SwissEphBridge {
         planet: SwissEphPlanet,
         julianDay: Double
     ) -> (longitude: Double, latitude: Double)? {
+
+        // 计都：罗睺加 180 度
+        if planet == .southNode {
+            guard let trueNode = calculateCoordinates(planet: .trueNode, julianDay: julianDay)
+            else { return nil }
+            let shifted = trueNode.longitude + 180.0
+            return (
+                longitude: shifted > 360 ? shifted - 360 : shifted, latitude: -trueNode.latitude
+            )
+        }
+
+        // 紫炁：中国古代虚星，约28年一周天。
+        // 由于没有确切的官方星历公式，这里使用一个简单的线性占位推算：每日运行约 0.0352 度。
+        // 以 J2000 (JD 2451545.0) 作为一个占位起点。
+        if planet == .ziqi {
+            let daysSinceJ2000 = julianDay - 2451545.0
+            let speedPerDay = 360.0 / (28.0 * 365.25)  // 约 0.0352 度/天
+            var lon = (daysSinceJ2000 * speedPerDay).truncatingRemainder(dividingBy: 360.0)
+            if lon < 0 { lon += 360.0 }
+            return (longitude: lon, latitude: 0.0)  // 虚星通常没有黄纬
+        }
+
+        guard let sePlanetID = planet.sePlanetID else { return nil }
+
         // 🪶 栈上分配，零堆开销
         var coordinates = [Double](repeating: 0.0, count: 6)
         var errorMsg = [CChar](repeating: 0, count: 256)
 
         let flag = swe_calc_ut(
             julianDay,
-            planet.rawValue,
+            sePlanetID,
             SEFLG_SPEED,
             &coordinates,
             &errorMsg

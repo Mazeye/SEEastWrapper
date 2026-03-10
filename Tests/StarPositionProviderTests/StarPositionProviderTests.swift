@@ -81,26 +81,42 @@ final class StarPositionProviderTests: XCTestCase {
 
     // MARK: - 3. 真实 Provider：默认二十八宿 + 可配置扩展
 
-    func testRealProviderDefaultReturnsLunarMansionsAndCoreObjects() {
+    // MARK: - 3. 真实 Provider：基于 JSON 配置
+
+    func testRealProviderLoadsFromJSON() {
         let provider = RealStarPositionProvider()
         let list = provider.starPositions(date: nightInBeijing, location: beijing)
-        XCTAssertEqual(list.count, 36, "默认应返回二十八宿 + 日/月/天极/五大行星")
+        // 28 宿 + 日月 (2) + 五星 (5) + 四余 (4) + 北斗 (7) + 北极星 (1) = 47
+        XCTAssertEqual(list.count, 47, "默认应从 JSON 加载所有配置的天体")
     }
 
-    func testRealProviderDefaultContainsBoundaryMansionIds() {
+    func testRealProviderContainsExpectedIds() {
         let provider = RealStarPositionProvider()
         let list = provider.starPositions(date: nightInBeijing, location: beijing)
         let ids = Set(list.map(\.id))
+
+        // 校验边界宿
         XCTAssertTrue(ids.contains("lm_角"))
         XCTAssertTrue(ids.contains("lm_轸"))
+
+        // 校验日月五星
         XCTAssertTrue(ids.contains("sun"))
         XCTAssertTrue(ids.contains("moon"))
-        XCTAssertTrue(ids.contains("tianji"))
         XCTAssertTrue(ids.contains("mercury"))
         XCTAssertTrue(ids.contains("venus"))
         XCTAssertTrue(ids.contains("mars"))
         XCTAssertTrue(ids.contains("jupiter"))
         XCTAssertTrue(ids.contains("saturn"))
+
+        // 校验四余
+        XCTAssertTrue(ids.contains("luo_hou"))
+        XCTAssertTrue(ids.contains("ji_du"))
+        XCTAssertTrue(ids.contains("zi_qi"))
+        XCTAssertTrue(ids.contains("yue_bei"))
+
+        // 校验北斗和北极星
+        XCTAssertTrue(ids.contains("polaris"))
+        XCTAssertTrue(ids.contains("bd_tian_shu"))
     }
 
     func testSwiftUICoordinateInputConvenienceAPI() {
@@ -111,7 +127,7 @@ final class StarPositionProviderTests: XCTestCase {
             altitudeMeters: 0
         )
         let list = provider.starPositions(input: input)
-        XCTAssertEqual(list.count, 36)
+        XCTAssertEqual(list.count, 47)
     }
 
     func testProviderCanExtendByJ2000Coordinate() {

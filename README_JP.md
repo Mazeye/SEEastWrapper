@@ -71,6 +71,26 @@ let stars = provider.starPositions(input: input)
 RealStarPositionProvider(objects:)
 ```
 
+## 現在地の月相を取得する (Moon Phase)
+
+このライブラリは、指定された日時と場所（オプション）の月相を計算するインターフェース `calculateMoonPhase` を提供します。
+
+```swift
+import CoreLocation
+import SEEastWrapper
+
+let date = Date() // 現在の日時
+let tokyo = CLLocation(latitude: 35.6895, longitude: 139.6917)
+
+if let moonPhase = calculateMoonPhase(date: date, location: tokyo) {
+    print("輝面比 (Illuminated percentage): \(moonPhase.percentage)") // 0.0 ~ 1.0
+    print("月相角 (Phase angle): \(moonPhase.phaseAngle)") // 0 ~ 360 度
+    print("満ちていく状態か (Is waxing): \(moonPhase.isWaxing)")
+}
+```
+
+`location` を省略した場合、地心での計算がデフォルトとなります。`location` を指定することで、より正確な観測地中心（Topocentric）の補正がかかります。
+
 ## CLI デバッグ
 
 任意の日時・経緯度を CLI で確認できます:

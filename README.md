@@ -62,6 +62,26 @@ let stars = provider.starPositions(input: input)
 
 然后传入 `RealStarPositionProvider(objects:)` 即可。
 
+## 取当地月相 (Moon Phase)
+
+库提供了一个直接计算此时此地月相的接口 `calculateMoonPhase`：
+
+```swift
+import CoreLocation
+import SEEastWrapper
+
+let date = Date() // 当前时间
+let beijing = CLLocation(latitude: 39.9042, longitude: 116.4074)
+
+if let moonPhase = calculateMoonPhase(date: date, location: beijing) {
+    print("被照亮比例: \(moonPhase.percentage)") // 0.0 ~ 1.0
+    print("月相角: \(moonPhase.phaseAngle)") // 0 ~ 360 度
+    print("是否盈长 (Waxing): \(moonPhase.isWaxing)")
+}
+```
+
+如果不提供 `location`，将默认采用地心黄经差计算。提供 Location 会引入 Topocentric （站心）修正，令结果更精准。
+
 ## CLI 调试（推荐）
 
 可直接命令行输入时间和经纬度查询：

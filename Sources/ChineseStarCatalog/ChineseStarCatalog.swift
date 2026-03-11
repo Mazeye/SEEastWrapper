@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreLocation
 
 // MARK: - 星体类型（用于 AR 显示与数据源区分）
 
@@ -232,4 +233,47 @@ public func sunMoonPlanetsCoordinates(date: Date) -> [(String, longitude: Double
         }
     }
     return list
+}
+
+// MARK: - 月相 (Moon Phase)
+
+/// 月相数据模型
+public struct MoonPhase: Codable, Sendable {
+    /// 月亮被照亮的比例，范围 [0.0, 1.0]。0 代表新月，1 代表满月。
+    public let percentage: Double
+    /// 月相角（度）。0度为新月，180度为满月。
+    public let phaseAngle: Double
+    /// 是否处于盈长状态（月相越来越满）。如果为 false，则是亏缺状态。
+    public let isWaxing: Bool
+    
+    public init(percentage: Double, phaseAngle: Double, isWaxing: Bool) {
+        self.percentage = percentage
+        self.phaseAngle = phaseAngle
+        self.isWaxing = isWaxing
+    }
+}
+
+/// 计算指定时间与地点（可选）的月相信息。
+/// 如果提供了位置，将采用更加精准的地平站心坐标（Topocentric）修正。
+/// - Parameters:
+///   - date: 观测时间
+///   - location: 观测地点（可选）
+/// - Returns: 月相信息，如果计算失败则返回 nil。
+public func calculateMoonPhase(date: Date, location: CLLocation? = nil) -> MoonPhase? {
+    let jd = SwissEphBridge.julianDay(from: date)
+    let alt = location?.altitude ?? 0.0
+    
+    guard let result = SwissEphBridge.calculateMoonPhase(
+        julianDay: jd, 
+        location: location?.coordinate, 
+        altitude: alt
+    ) else {
+        return nil
+    }
+    
+    return MoonPhase(
+        percentage: result.percentage,
+        phaseAngle: result.phaseAngle,
+        isWaxing: result.isWaxing
+    )
 }

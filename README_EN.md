@@ -71,6 +71,26 @@ Then pass custom objects to:
 RealStarPositionProvider(objects:)
 ```
 
+## Get Local Moon Phase
+
+The library provides an interface `calculateMoonPhase` for calculating the exact moon phase for a given time and optional location:
+
+```swift
+import CoreLocation
+import SEEastWrapper
+
+let date = Date() // Current time
+let beijing = CLLocation(latitude: 39.9042, longitude: 116.4074)
+
+if let moonPhase = calculateMoonPhase(date: date, location: beijing) {
+    print("Illuminated percentage: \(moonPhase.percentage)") // 0.0 ~ 1.0
+    print("Phase angle: \(moonPhase.phaseAngle)") // 0 ~ 360 degrees
+    print("Is waxing: \(moonPhase.isWaxing)")
+}
+```
+
+If no `location` is provided, geocentric calculation is used. Providing a `location` applies a topocentric correction which yields more precise results.
+
 ## CLI Debugging
 
 You can query any time/location directly from CLI:

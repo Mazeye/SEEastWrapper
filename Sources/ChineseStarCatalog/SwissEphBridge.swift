@@ -5,6 +5,7 @@
 //
 
 import CSwissEphemeris
+import CoreLocation
 import Foundation
 
 // MARK: - 行星枚举（映射 Swiss Ephemeris C 常量）
@@ -141,5 +142,84 @@ public enum SwissEphBridge {
             hourDouble,
             SE_GREG_CAL
         )
+    }
+
+    /// 计算月相信息（被照亮比例、相位角、是否盈长）
+    /// - Parameters:
+    ///   - julianDay: 儒略日（UT）
+    ///   - location: 可选，如果提供则使用站心坐标(Topocentric)进行更精确计算
+    ///   - altitude: 观测海拔高度（米），默认0
+    /// - Returns: 月相数据（被照亮比例 0~1，相位角，是否盈长），计算失败返回 nil。
+    public static func calculateMoonPhase(
+        julianDay: Double,
+        location: CLLocationCoordinate2D? = nil,
+        altitude: Double = 0
+    ) -> (percentage: Double, phaseAngle: Double, isWaxing: Bool)? {
+        
+        var flags = SEFLG_SPEED
+        if let loc = location {
+            flags |= SEFLG_TOPOCTR
+            swe_set_topo(loc.longitude, loc.latitude, altitude)
+        }
+        
+        // 🪶 栈上分配，零堆开销
+        var attrPresent = [Double](repeating: 0.0, count: 20)
+        var errorMsg = [CChar](repeating: 0, count: 256)
+        
+        let flagPresent = swe_pheno_ut(
+            julianDay,
+            SE_MOON,
+            flags,
+            &attrPresent,
+            &errorMsg
+        )
+        
+        if flagPresent < 0 {
+            let errorString = String(cString: errorMsg)
+            print("Swiss Ephemeris Moon Phase Error: \(errorString)")
+            return nil
+        }
+        
+        // attrPresent[1] is the illuminated fraction (0.0 to 1.0)
+        let percentage = attrPresent[1]
+        
+        // CSwissEphemeris `swe_pheno`'s attr[0] is the phase angle (Earth-Moon-Sun angle),
+        // which varies between 0 and 180 degrees.
+        // What we usually want for "lunar phase angle" (Moon age angle) 
+        // is the difference in geocentric ecliptic longitude between Moon and Sun (0 to 360).
+        var moonLon = 0.0
+        var sunLon = 0.0
+        var coords = [Double](repeating: 0.0, count: 6)
+        
+        let moonFlag = swe_calc_ut(julianDay, SE_MOON, SEFLG_SPEED, &coords, &errorMsg)
+        if moonFlag >= 0 { moonLon = coords[0] }
+        
+        let sunFlag = swe_calc_ut(julianDay, SE_SUN, SEFLG_SPEED, &coords, &errorMsg)
+        if sunFlag >= 0 { sunLon = coords[0] }
+        
+        var phaseAngle = moonLon - sunLon
+        if phaseAngle < 0 { phaseAngle += 360.0 }
+        
+        // 为了判断是否正在"盈"，往前倒退推算（例如倒推 1 小时）
+        // 1小时 = 1 / 24 天
+        let pastJulianDay = julianDay - (1.0 / 24.0)
+        var attrPast = [Double](repeating: 0.0, count: 20)
+        
+        let flagPast = swe_pheno_ut(
+            pastJulianDay,
+            SE_MOON,
+            flags,
+            &attrPast,
+            &errorMsg
+        )
+        
+        var isWaxing = true
+        if flagPast >= 0 {
+            let pastPercentage = attrPast[1]
+            // 如果现在的比例 > 过去的比例，就是"盈" (Waxing)
+            isWaxing = percentage > pastPercentage
+        }
+        
+        return (percentage: percentage, phaseAngle: phaseAngle, isWaxing: isWaxing)
     }
 }

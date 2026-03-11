@@ -155,4 +155,49 @@ final class StarPositionProviderTests: XCTestCase {
         XCTAssertEqual(list.count, 1, "应能通过标准名解析到 J2000 坐标")
         XCTAssertEqual(list.first?.id, "spica_test")
     }
+
+    // MARK: - 4. 月相 (Moon Phase) 计算测试
+
+    func testMoonPhaseCalculation() {
+        // 满月例子：北京时间 2024年4月24日 07:49 (UTC: 2024-04-23 23:49)
+        var c1 = DateComponents()
+        c1.year = 2024; c1.month = 4; c1.day = 23; c1.hour = 23; c1.minute = 49
+        let fullMoonDate = Calendar(identifier: .gregorian).date(from: c1)!
+
+        if let fullPhase = calculateMoonPhase(date: fullMoonDate, location: beijing) {
+            XCTAssertGreaterThan(fullPhase.percentage, 0.99, "此时应非常接近满月 (1.0)")
+            
+            // 相位角对于满月来说，理想是 180 度，允许 ±5 度的天文波动误差
+            XCTAssertEqual(fullPhase.phaseAngle, 180.0, accuracy: 5.0, "满月相位角应在 180 度附近")
+        } else {
+            XCTFail("Full moon phase calculation failed")
+        }
+
+        // 新月例子：北京时间 2024年5月8日 11:22 (UTC: 2024-05-08 03:22)
+        var c2 = DateComponents()
+        c2.year = 2024; c2.month = 5; c2.day = 8; c2.hour = 3; c2.minute = 22
+        let newMoonDate = Calendar(identifier: .gregorian).date(from: c2)!
+
+        if let newPhase = calculateMoonPhase(date: newMoonDate, location: nil) {
+            XCTAssertLessThan(newPhase.percentage, 0.01, "此时应非常接近新月 (0.0)")
+            
+            // 相位角新月理想值是 0 或 360
+            let normalizedPhaseAngle = newPhase.phaseAngle >= 180 ? 360.0 - newPhase.phaseAngle : newPhase.phaseAngle
+            XCTAssertEqual(normalizedPhaseAngle, 0.0, accuracy: 6.0, "新月相位角应在 0 度附近，或接近 360")
+        } else {
+            XCTFail("New moon phase calculation failed")
+        }
+
+        // 上弦月（半月）：北京时间 2024年5月15日 19:48 (UTC: 2024-05-15 11:48)
+        var c3 = DateComponents()
+        c3.year = 2024; c3.month = 5; c3.day = 15; c3.hour = 11; c3.minute = 48
+        let firstQuarterDate = Calendar(identifier: .gregorian).date(from: c3)!
+
+        if let waxingPhase = calculateMoonPhase(date: firstQuarterDate, location: nil) {
+            XCTAssertEqual(waxingPhase.percentage, 0.5, accuracy: 0.05, "上弦月应被照亮约 50%")
+            XCTAssertTrue(waxingPhase.isWaxing, "上弦月时应处于盈长状态 (Waxing)")
+        } else {
+            XCTFail("Waxing moon phase calculation failed")
+        }
+    }
 }

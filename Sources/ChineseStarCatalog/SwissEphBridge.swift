@@ -47,19 +47,24 @@ public enum SwissEphPlanet: String, CaseIterable, Codable {
 
 /// 直接调用 CSwissEphemeris C 函数的安全桥接。
 /// 使用栈上数组（`&` 传递），无堆分配，无内存泄漏。
+/// P3：所有 C API 調用通過 serial queue 序列化，確保線程安全。
 public enum SwissEphBridge {
+
+    /// Swiss Ephemeris C 庫不是線程安全的，所有調用必須序列化。
+    private static let queue = DispatchQueue(label: "com.seeastwrapper.swisseph", qos: .userInitiated)
 
     /// 初始化星历路径。
     /// 传 nil 使用内置 Moshier 星历（不需要外部文件，支持 -13000 ~ +17000 年）。
     /// - Parameter path: 星历文件路径，nil 使用内置 Moshier 算法。
     public static func setEphemerisPath(_ path: String? = nil) {
-        if let path = path {
-            path.withCString { cstr in
-                // swe_set_ephe_path 需要 UnsafeMutablePointer，但不会修改内容
-                swe_set_ephe_path(UnsafeMutablePointer(mutating: cstr))
+        queue.sync {
+            if let path = path {
+                path.withCString { cstr in
+                    swe_set_ephe_path(UnsafeMutablePointer(mutating: cstr))
+                }
+            } else {
+                swe_set_ephe_path(nil)
             }
-        } else {
-            swe_set_ephe_path(nil)
         }
     }
 
@@ -83,39 +88,37 @@ public enum SwissEphBridge {
             )
         }
 
-        // 紫炁：中国古代虚星，约28年一周天。
-        // 由于没有确切的官方星历公式，这里使用一个简单的线性占位推算：每日运行约 0.0352 度。
-        // 以 J2000 (JD 2451545.0) 作为一个占位起点。
+        // 紫炁：中国古代虚星，约28年一周天（纯数学，不需要 C API）。
         if planet == .ziqi {
             let daysSinceJ2000 = julianDay - 2451545.0
-            let speedPerDay = 360.0 / (28.0 * 365.25)  // 约 0.0352 度/天
+            let speedPerDay = 360.0 / (28.0 * 365.25)
             var lon = (daysSinceJ2000 * speedPerDay).truncatingRemainder(dividingBy: 360.0)
             if lon < 0 { lon += 360.0 }
-            return (longitude: lon, latitude: 0.0)  // 虚星通常没有黄纬
+            return (longitude: lon, latitude: 0.0)
         }
 
         guard let sePlanetID = planet.sePlanetID else { return nil }
 
-        // 🪶 栈上分配，零堆开销
-        var coordinates = [Double](repeating: 0.0, count: 6)
-        var errorMsg = [CChar](repeating: 0, count: 256)
+        return queue.sync {
+            var coordinates = [Double](repeating: 0.0, count: 6)
+            var errorMsg = [CChar](repeating: 0, count: 256)
 
-        let flag = swe_calc_ut(
-            julianDay,
-            sePlanetID,
-            SEFLG_SPEED,
-            &coordinates,
-            &errorMsg
-        )
+            let flag = swe_calc_ut(
+                julianDay,
+                sePlanetID,
+                SEFLG_SPEED,
+                &coordinates,
+                &errorMsg
+            )
 
-        if flag < 0 {
-            let errorString = String(cString: errorMsg)
-            print("Swiss Ephemeris Error: \(errorString)")
-            return nil
+            if flag < 0 {
+                let errorString = String(cString: errorMsg)
+                print("Swiss Ephemeris Error: \(errorString)")
+                return nil
+            }
+
+            return (longitude: coordinates[0], latitude: coordinates[1])
         }
-
-        // coordinates[0] = 黄经, coordinates[1] = 黄纬
-        return (longitude: coordinates[0], latitude: coordinates[1])
     }
 
     /// 将 Foundation `Date` 转为儒略日（UT）。
@@ -135,13 +138,15 @@ public enum SwissEphBridge {
 
         let hourDouble = Double(hour) + Double(minute) / 60.0 + Double(second) / 3600.0
 
-        return swe_julday(
-            Int32(year),
-            Int32(month),
-            Int32(day),
-            hourDouble,
-            SE_GREG_CAL
-        )
+        return queue.sync {
+            swe_julday(
+                Int32(year),
+                Int32(month),
+                Int32(day),
+                hourDouble,
+                SE_GREG_CAL
+            )
+        }
     }
 
     /// 计算月相信息（被照亮比例、相位角、是否盈长）
@@ -155,71 +160,51 @@ public enum SwissEphBridge {
         location: CLLocationCoordinate2D? = nil,
         altitude: Double = 0
     ) -> (percentage: Double, phaseAngle: Double, isWaxing: Bool)? {
-        
-        var flags = SEFLG_SPEED
-        if let loc = location {
-            flags |= SEFLG_TOPOCTR
-            swe_set_topo(loc.longitude, loc.latitude, altitude)
+
+        return queue.sync {
+            var flags = SEFLG_SPEED
+            if let loc = location {
+                flags |= SEFLG_TOPOCTR
+                swe_set_topo(loc.longitude, loc.latitude, altitude)
+            }
+
+            var attrPresent = [Double](repeating: 0.0, count: 20)
+            var errorMsg = [CChar](repeating: 0, count: 256)
+
+            let flagPresent = swe_pheno_ut(
+                julianDay,
+                SE_MOON,
+                flags,
+                &attrPresent,
+                &errorMsg
+            )
+
+            if flagPresent < 0 {
+                let errorString = String(cString: errorMsg)
+                print("Swiss Ephemeris Moon Phase Error: \(errorString)")
+                return nil
+            }
+
+            let percentage = attrPresent[1]
+
+            // 月相角 = 月亮黃經 - 太陽黃經（0~360°）
+            var moonLon = 0.0
+            var sunLon = 0.0
+            var coords = [Double](repeating: 0.0, count: 6)
+
+            let moonFlag = swe_calc_ut(julianDay, SE_MOON, SEFLG_SPEED, &coords, &errorMsg)
+            if moonFlag >= 0 { moonLon = coords[0] }
+
+            let sunFlag = swe_calc_ut(julianDay, SE_SUN, SEFLG_SPEED, &coords, &errorMsg)
+            if sunFlag >= 0 { sunLon = coords[0] }
+
+            var phaseAngle = moonLon - sunLon
+            if phaseAngle < 0 { phaseAngle += 360.0 }
+
+            // P4：phaseAngle 0→180° 為盈（新月→滿月），180→360° 為虧（滿月→新月）
+            let isWaxing = phaseAngle < 180.0
+
+            return (percentage: percentage, phaseAngle: phaseAngle, isWaxing: isWaxing)
         }
-        
-        // 🪶 栈上分配，零堆开销
-        var attrPresent = [Double](repeating: 0.0, count: 20)
-        var errorMsg = [CChar](repeating: 0, count: 256)
-        
-        let flagPresent = swe_pheno_ut(
-            julianDay,
-            SE_MOON,
-            flags,
-            &attrPresent,
-            &errorMsg
-        )
-        
-        if flagPresent < 0 {
-            let errorString = String(cString: errorMsg)
-            print("Swiss Ephemeris Moon Phase Error: \(errorString)")
-            return nil
-        }
-        
-        // attrPresent[1] is the illuminated fraction (0.0 to 1.0)
-        let percentage = attrPresent[1]
-        
-        // CSwissEphemeris `swe_pheno`'s attr[0] is the phase angle (Earth-Moon-Sun angle),
-        // which varies between 0 and 180 degrees.
-        // What we usually want for "lunar phase angle" (Moon age angle) 
-        // is the difference in geocentric ecliptic longitude between Moon and Sun (0 to 360).
-        var moonLon = 0.0
-        var sunLon = 0.0
-        var coords = [Double](repeating: 0.0, count: 6)
-        
-        let moonFlag = swe_calc_ut(julianDay, SE_MOON, SEFLG_SPEED, &coords, &errorMsg)
-        if moonFlag >= 0 { moonLon = coords[0] }
-        
-        let sunFlag = swe_calc_ut(julianDay, SE_SUN, SEFLG_SPEED, &coords, &errorMsg)
-        if sunFlag >= 0 { sunLon = coords[0] }
-        
-        var phaseAngle = moonLon - sunLon
-        if phaseAngle < 0 { phaseAngle += 360.0 }
-        
-        // 为了判断是否正在"盈"，往前倒退推算（例如倒推 1 小时）
-        // 1小时 = 1 / 24 天
-        let pastJulianDay = julianDay - (1.0 / 24.0)
-        var attrPast = [Double](repeating: 0.0, count: 20)
-        
-        let flagPast = swe_pheno_ut(
-            pastJulianDay,
-            SE_MOON,
-            flags,
-            &attrPast,
-            &errorMsg
-        )
-        
-        var isWaxing = true
-        if flagPast >= 0 {
-            let pastPercentage = attrPast[1]
-            // 如果现在的比例 > 过去的比例，就是"盈" (Waxing)
-            isWaxing = percentage > pastPercentage
-        }
-        
-        return (percentage: percentage, phaseAngle: phaseAngle, isWaxing: isWaxing)
     }
 }

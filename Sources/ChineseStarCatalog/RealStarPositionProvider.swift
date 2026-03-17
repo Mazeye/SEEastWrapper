@@ -92,20 +92,46 @@ public final class RealStarPositionProvider: StarPositionProvider {
         self.standardNameLookup = Self.buildStandardNameLookup()
     }
 
+    /// 一次查詢的預算天文常數，避免 47 個天體重複計算。
+    private struct ObservationContext {
+        let julianDay: Double
+        let obliquityRad: Double
+        let lstDeg: Double
+        let observerLatDeg: Double
+        let observerLonDeg: Double
+    }
+
     public func starPositions(date: Date, location: CLLocation?) -> StarPositionList {
         guard let location else { return [] }
 
         let lat = location.coordinate.latitude
         let lon = location.coordinate.longitude
 
+        // P1+P2：julianDay / obliquity / LST 只算一次，傳給後續所有函數
+        let jd = Self.julianDay(date: date)
+        let t = (jd - 2451545.0) / 36525.0
+        let obliquityDeg = 23.439291 - 0.0130042 * t
+        let gmst =
+            280.46061837
+            + 360.98564736629 * (jd - 2451545.0)
+            + 0.000387933 * t * t
+            - (t * t * t) / 38710000.0
+        let lstDeg = Self.normalizeDegrees(gmst + lon)
+
+        let ctx = ObservationContext(
+            julianDay: jd,
+            obliquityRad: Self.deg2rad(obliquityDeg),
+            lstDeg: lstDeg,
+            observerLatDeg: lat,
+            observerLonDeg: lon
+        )
+
         return objects.compactMap { obj in
-            guard let eq = resolveEquatorialCoordinate(for: obj, date: date) else { return nil }
+            guard let eq = resolveEquatorialCoordinate(for: obj, ctx: ctx) else { return nil }
             let horizontal = Self.equatorialToHorizontal(
-                date: date,
+                ctx: ctx,
                 raDeg: eq.raDeg,
-                decDeg: eq.decDeg,
-                observerLatDeg: lat,
-                observerLonDeg: lon
+                decDeg: eq.decDeg
             )
             return StarARItem(
                 id: obj.id,
@@ -139,7 +165,7 @@ public final class RealStarPositionProvider: StarPositionProvider {
 
     // MARK: - 内部工具
 
-    private func resolveEquatorialCoordinate(for object: CelestialObjectConfig, date: Date)
+    private func resolveEquatorialCoordinate(for object: CelestialObjectConfig, ctx: ObservationContext)
         -> EquatorialJ2000?
     {
         switch object.source {
@@ -148,15 +174,14 @@ public final class RealStarPositionProvider: StarPositionProvider {
         case .standardName(let name):
             return standardNameLookup[name.lowercased()]
         case .swissPlanet(let planet):
-            let jd = SwissEphBridge.julianDay(from: date)
-            guard let coord = SwissEphBridge.calculateCoordinates(planet: planet, julianDay: jd)
+            guard let coord = SwissEphBridge.calculateCoordinates(planet: planet, julianDay: ctx.julianDay)
             else {
                 return nil
             }
             return Self.eclipticToEquatorial(
                 longitudeDeg: coord.longitude,
                 latitudeDeg: coord.latitude,
-                date: date
+                obliquityRad: ctx.obliquityRad
             )
         }
     }
@@ -179,11 +204,10 @@ public final class RealStarPositionProvider: StarPositionProvider {
     private static func eclipticToEquatorial(
         longitudeDeg: Double,
         latitudeDeg: Double,
-        date: Date
+        obliquityRad epsilon: Double
     ) -> EquatorialJ2000 {
         let lambda = deg2rad(longitudeDeg)
         let beta = deg2rad(latitudeDeg)
-        let epsilon = deg2rad(meanObliquityOfEcliptic(date: date))
 
         let sinDec = sin(beta) * cos(epsilon) + cos(beta) * sin(epsilon) * sin(lambda)
         let dec = asin(sinDec)
@@ -198,27 +222,17 @@ public final class RealStarPositionProvider: StarPositionProvider {
         )
     }
 
-    /// 平黄赤交角（度）
-    private static func meanObliquityOfEcliptic(date: Date) -> Double {
-        let jd = julianDay(date: date)
-        let t = (jd - 2451545.0) / 36525.0
-        return 23.439291 - 0.0130042 * t
-    }
-
     /// 赤道坐标 (RA/Dec) -> 地平坐标 (Az/Alt)，单位均为度。
     private static func equatorialToHorizontal(
-        date: Date,
+        ctx: ObservationContext,
         raDeg: Double,
-        decDeg: Double,
-        observerLatDeg: Double,
-        observerLonDeg: Double
+        decDeg: Double
     ) -> (azimuthDeg: Double, altitudeDeg: Double) {
-        let lstDeg = localSiderealTimeDegrees(date: date, observerLongitudeDeg: observerLonDeg)
-        let hourAngleDeg = normalizeDegrees(lstDeg - raDeg)
+        let hourAngleDeg = normalizeDegrees(ctx.lstDeg - raDeg)
 
         let ha = deg2rad(hourAngleDeg)
         let dec = deg2rad(decDeg)
-        let lat = deg2rad(observerLatDeg)
+        let lat = deg2rad(ctx.observerLatDeg)
 
         let sinAlt = sin(dec) * sin(lat) + cos(dec) * cos(lat) * cos(ha)
         let alt = asin(sinAlt)
@@ -229,19 +243,6 @@ public final class RealStarPositionProvider: StarPositionProvider {
         let az = atan2(sinAz, cosAz)
 
         return (normalizeDegrees(rad2deg(az)), rad2deg(alt))
-    }
-
-    /// 地方恒星时（度，0-360）。
-    private static func localSiderealTimeDegrees(date: Date, observerLongitudeDeg: Double) -> Double
-    {
-        let jd = julianDay(date: date)
-        let t = (jd - 2451545.0) / 36525.0
-        let gmst =
-            280.46061837
-            + 360.98564736629 * (jd - 2451545.0)
-            + 0.000387933 * t * t
-            - (t * t * t) / 38710000.0
-        return normalizeDegrees(gmst + observerLongitudeDeg)
     }
 
     private static func julianDay(date: Date) -> Double {
